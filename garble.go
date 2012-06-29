@@ -6,6 +6,7 @@ import (
 	"crypto/rand"
 	"flag"
 	"fmt"
+	"io"
 	"log"
 	"net"
 	"time"
@@ -13,6 +14,7 @@ import (
 
 var (
 	lAddr = flag.String("a", "localhost", "listen address")
+	fAddr = flag.String("f", "server:80", "forward address")
 )
 
 type Filter struct {
@@ -29,6 +31,7 @@ var filters = []*Filter{
 	fNeverClose,
 	fSlowButSteady,
 	fRandom,
+	fSlowButSteadyProxy,
 }
 
 func startFilter(f *Filter) {
@@ -124,4 +127,27 @@ func runRandom(f *Filter, conn net.Conn) {
 	buf := make([]byte, 1024)
 	rand.Read(buf)
 	conn.Write(buf)
+}
+
+var fSlowButSteadyProxy = &Filter{
+	Run:         runSlowButSteadyProxy,
+	Port:        1906,
+	Name:        "Slow but Steady Proxy",
+	Description: "Proxy to a backend server and return the response one byte per second",
+}
+
+func runSlowButSteadyProxy(f *Filter, conn net.Conn) {
+	defer conn.Close()
+	proxy, err := net.Dial("tcp", *fAddr)
+	if err != nil {
+		// Not really a good reason to die here either
+		log.Fatal(err)
+	}
+
+	go io.Copy(proxy, conn)
+
+	c := time.Tick(1 * time.Second)
+	for _ = range c {
+		io.CopyN(conn, proxy, 1)
+	}
 }
