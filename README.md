@@ -6,7 +6,7 @@ listens on. It can be used to test your network clients for resiliency
 when faced with failure and evil.
 
 garble was inspired by the Killer Test Harness from Michael Nygard's
-talk at Velocity 2012, ["Stablity
+talk at Velocity 2012, ["Stability
 Patterns"](http://velocityconf.com/velocity2012/public/schedule/detail/24841)
 (slides 44 and 45).
 
